@@ -17,6 +17,7 @@ package fileutil
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -73,6 +74,9 @@ func Mkdir(dir string) error {
 
 // SyncDir calls fsync on the specified directory.
 func SyncDir(dir string) (err error) {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
 	fileInfo, err := os.Stat(dir)
 	if err != nil {
 		return err
