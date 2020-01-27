@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"testing"
 )
 
 // File is a readable, writable sequence of bytes.
@@ -270,4 +271,20 @@ func LinkOrCopy(fs FS, oldname, newname string) error {
 		return err
 	}
 	return Copy(fs, oldname, newname)
+}
+
+func ReportLeakedFD(fs FS, t *testing.T) {
+	mf, ok := fs.(*MemFS)
+	if !ok {
+		return
+	}
+	ff := func(path string, isDir bool, refs int32) error {
+		if refs != 0 {
+			t.Fatalf("%s (isDir %t) is not closed", path, isDir)
+		}
+		return nil
+	}
+	if err := mf.Iterate(ff); err != nil {
+		t.Fatalf("fs.Iterate failed %v", err)
+	}
 }

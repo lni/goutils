@@ -119,6 +119,31 @@ func (y *MemFS) ResetToSyncedState() {
 	y.mu.Unlock()
 }
 
+func (y *MemFS) Iterate(f func(path string, isDir bool, refs int32) error) error {
+	if y.root != nil && y.root.isDir {
+		return y.iterate(y.root, f)
+	}
+	return nil
+}
+
+func (y *MemFS) iterate(node *memNode,
+	f func(path string, isDir bool, refs int32) error) error {
+	if !node.isDir {
+		panic("not a dir")
+	}
+	for _, child := range node.children {
+		if err := f(child.name, child.isDir, child.refs); err != nil {
+			return err
+		}
+		if child.isDir {
+			if err := y.iterate(child, f); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // walk walks the directory tree for the fullname, calling f at each step. If
 // f returns an error, the walk will be aborted and return that same error.
 //
