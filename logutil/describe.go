@@ -43,3 +43,8 @@ func DescribeNode(clusterID uint64, nodeID uint64) string {
 func DescribeSM(clusterID uint64, nodeID uint64) string {
 	return fmt.Sprintf("[%05d:%05d]", clusterID%mod, nodeID%mod)
 }
+
+// DescribeSS returns the string representation of a snapshot object.
+func DescribeSS(clusterID uint64, nodeID uint64, index uint64) string {
+	return fmt.Sprintf("<%05d:%05d:%d>", clusterID%mod, nodeID%mod, index)
+}
