@@ -41,6 +41,7 @@ import (
 // Stopper is a manager struct for managing worker goroutines. It is modified
 // from an early version of the stopper struct found in CockroachDB's codebase.
 type Stopper struct {
+	mu          sync.Mutex
 	shouldStopC chan struct{}
 	wg          sync.WaitGroup
 	debug       bool
@@ -56,8 +57,9 @@ func NewStopper() *Stopper {
 	return s
 }
 
-// RunWorker creates a new goroutine and invoke the f func in that new
-// worker goroutine.
+// RunWorker creates a new goroutine and invoke the f func in that new worker
+// goroutine. The specified function f must return immediate after the
+// shouldStopC channel is closed.
 func (s *Stopper) RunWorker(f func()) {
 	s.runWorker(f, "")
 }
@@ -76,6 +78,8 @@ func (s *Stopper) RunNamedWorker(f func(), name string) {
 }
 
 func (s *Stopper) runPWorker(f func(arg interface{}), p interface{}) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.wg.Add(1)
 	go func() {
 		defer func() {
@@ -89,6 +93,8 @@ func (s *Stopper) runPWorker(f func(arg interface{}), p interface{}) {
 }
 
 func (s *Stopper) runWorker(f func(), name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.wg.Add(1)
 	var gid uint64
 	go func() {
@@ -119,6 +125,8 @@ func (s *Stopper) ShouldStop() chan struct{} {
 // managed worker goroutines are ready to return and called
 // sync.WaitGroup.Done() on the internal sync.WaitGroup.
 func (s *Stopper) Wait() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.wg.Wait()
 }
 
@@ -126,7 +134,7 @@ func (s *Stopper) Wait() {
 // to actually stop.
 func (s *Stopper) Stop() {
 	close(s.shouldStopC)
-	s.wg.Wait()
+	s.Wait()
 }
 
 // Close closes the internal shouldStopc chan struct{} to signal all
