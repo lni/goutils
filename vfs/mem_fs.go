@@ -2,7 +2,7 @@
 // of this source code is governed by a BSD-style license that can be found in
 // the LICENSE file.
 
-package vfs // import "github.com/cockroachdb/pebble/vfs"
+package vfs
 
 import (
 	"bytes"
@@ -84,6 +84,11 @@ type MemFS struct {
 }
 
 var _ FS = &MemFS{}
+
+// GetFreeSpace implements FS.GetFreeSpace.
+func (*MemFS) GetFreeSpace(string) (uint64, error) {
+	return 0, errors.New("pebble: not supported")
+}
 
 // String dumps the contents of the MemFS.
 func (y *MemFS) String() string {

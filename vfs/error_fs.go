@@ -259,6 +259,14 @@ func (fs *ErrorFS) Stat(name string) (os.FileInfo, error) {
 	return fs.fs.Stat(name)
 }
 
+// GetFreeSpace implements FS.GetFreeSpace.
+func (fs *ErrorFS) GetFreeSpace(path string) (uint64, error) {
+	if err := fs.inj.MaybeError(OpRead); err != nil {
+		return 0, err
+	}
+	return fs.fs.GetFreeSpace(path)
+}
+
 var _ File = &errorFile{}
 
 // errorFile implements vfs.File. The interface is implemented on the pointer
