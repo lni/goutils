@@ -73,12 +73,16 @@ func NewStoppableListener(addr string, tlsConfig *tls.Config,
 		if err != nil {
 			return nil, err
 		}
+		added := make(map[string]struct{})
 		for _, v := range ipList {
 			// ipv6 address is ignored
 			if v.To4() == nil {
 				continue
 			}
-			toListen = append(toListen, fmt.Sprintf("%s:%s", v, port))
+			if _, ok := added[string(v)]; !ok {
+				toListen = append(toListen, fmt.Sprintf("%s:%s", v, port))
+				added[string(v)] = struct{}{}
+			}
 		}
 	} else if stringutil.IPV4Regex.MatchString(hostname) {
 		toListen = append(toListen, addr)
