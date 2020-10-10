@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/lni/goutils/stringutil"
+	"github.com/lni/goutils/syncutil"
 )
 
 var (
@@ -36,11 +36,11 @@ var (
 // the specified address.
 type StoppableListener struct {
 	listeners []net.Listener
+	stopper   *syncutil.Stopper
 	stopc     <-chan struct{}
 	connc     chan net.Conn
 	errc      chan error
 	addr      string
-	wg        sync.WaitGroup
 }
 
 func parseAddress(addr string) (string, string, error) {
@@ -92,6 +92,7 @@ func NewStoppableListener(addr string, tlsConfig *tls.Config,
 	}
 	s := &StoppableListener{
 		listeners: listeners,
+		stopper:   syncutil.NewStopper(),
 		stopc:     stopc,
 		addr:      addr,
 		errc:      make(chan error, len(listeners)),
@@ -99,9 +100,7 @@ func NewStoppableListener(addr string, tlsConfig *tls.Config,
 	}
 	for _, lis := range s.listeners {
 		gl := lis
-		s.wg.Add(1)
-		go func() {
-			defer s.wg.Done()
+		s.stopper.RunWorker(func() {
 			for {
 				tc, err := gl.Accept()
 				if err != nil {
@@ -137,7 +136,7 @@ func NewStoppableListener(addr string, tlsConfig *tls.Config,
 					return
 				}
 			}
-		}()
+		})
 	}
 	return s, nil
 }
@@ -163,7 +162,7 @@ func (ln *StoppableListener) Accept() (net.Conn, error) {
 				err = e
 			}
 		}
-		ln.wg.Wait()
+		ln.stopper.Stop()
 		if err == nil {
 			err = ErrListenerStopped
 		}
