@@ -105,6 +105,13 @@ func (s *Stopper) Close() {
 	close(s.shouldStopC)
 }
 
+// Wait waits on the internal sync.WaitGroup. It only return when all
+// managed worker goroutines are ready to return and called
+// sync.WaitGroup.Done() on the internal sync.WaitGroup.
+func (s *Stopper) Wait() {
+	s.wg.Wait()
+}
+
 func (s *Stopper) stopped() bool {
 	select {
 	case <-s.shouldStopC:
