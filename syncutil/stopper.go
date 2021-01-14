@@ -41,6 +41,7 @@ import (
 // Stopper is a manager struct for managing worker goroutines. It is modified
 // from an early version of the stopper struct found in CockroachDB's codebase.
 type Stopper struct {
+	mu          sync.Mutex
 	shouldStopC chan struct{}
 	wg          sync.WaitGroup
 	debug       bool
@@ -59,44 +60,18 @@ func NewStopper() *Stopper {
 // RunWorker creates a new goroutine and invoke the f func in that new
 // worker goroutine.
 func (s *Stopper) RunWorker(f func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.stopped() {
+		return
+	}
 	s.runWorker(f, "")
-}
-
-// RunPWorker creates a new goroutine and invoke the f func with the specified
-// parameter p in that new worker goroutine.
-func (s *Stopper) RunPWorker(f func(arg interface{}), p interface{}) {
-	s.runPWorker(f, p)
-}
-
-// RunNamedWorker creates a new gorotuine and invoke the f func in that
-// new worker goroutine. The specified name is to identify the worker,
-// it is typically used for debugging purposes.
-func (s *Stopper) RunNamedWorker(f func(), name string) {
-	s.runWorker(f, name)
-}
-
-func (s *Stopper) runPWorker(f func(arg interface{}), p interface{}) {
-	s.wg.Add(1)
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				panic(r)
-			}
-		}()
-		f(p)
-		s.wg.Done()
-	}()
 }
 
 func (s *Stopper) runWorker(f func(), name string) {
 	s.wg.Add(1)
 	var gid uint64
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				panic(r)
-			}
-		}()
 		if s.debug {
 			gid = lang.GetGIDForDebugOnly()
 			log.Printf("goroutine %d started, name %s", gid, name)
@@ -115,16 +90,11 @@ func (s *Stopper) ShouldStop() chan struct{} {
 	return s.shouldStopC
 }
 
-// Wait waits on the internal sync.WaitGroup. It only return when all
-// managed worker goroutines are ready to return and called
-// sync.WaitGroup.Done() on the internal sync.WaitGroup.
-func (s *Stopper) Wait() {
-	s.wg.Wait()
-}
-
 // Stop signals all managed worker goroutines to stop and wait for them
 // to actually stop.
 func (s *Stopper) Stop() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	close(s.shouldStopC)
 	s.wg.Wait()
 }
@@ -133,4 +103,13 @@ func (s *Stopper) Stop() {
 // worker goroutines that they should stop.
 func (s *Stopper) Close() {
 	close(s.shouldStopC)
+}
+
+func (s *Stopper) stopped() bool {
+	select {
+	case <-s.shouldStopC:
+		return true
+	default:
+	}
+	return false
 }
