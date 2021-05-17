@@ -21,8 +21,8 @@ type Lock struct {
 }
 
 // NewLock creates a new Lock instance.
-func NewLock() *Lock {
-	return &Lock{ch: make(chan struct{}, 1)}
+func NewLock() Lock {
+	return Lock{ch: make(chan struct{}, 1)}
 }
 
 // Lock blocks the calling thread until the lock is acquired.
