@@ -22,29 +22,29 @@ const (
 	mod = 100000
 )
 
-// ClusterID returns the string representation of a cluster id value
-func ClusterID(clusterID uint64) string {
-	return fmt.Sprintf("c%05d", clusterID%mod)
+// ShardID returns the string representation of a cluster id value
+func ShardID(shardID uint64) string {
+	return fmt.Sprintf("c%05d", shardID%mod)
 }
 
-// NodeID returns the string representation of a node id value.
-func NodeID(nodeID uint64) string {
-	return fmt.Sprintf("n%05d", nodeID%mod)
+// ReplicaID returns the string representation of a node id value.
+func ReplicaID(replicaID uint64) string {
+	return fmt.Sprintf("n%05d", replicaID%mod)
 }
 
 // DescribeNode returns the string representation of a node with known
 // cluster id and node id values.
-func DescribeNode(clusterID uint64, nodeID uint64) string {
-	return fmt.Sprintf("[%05d:%05d]", clusterID%mod, nodeID%mod)
+func DescribeNode(shardID uint64, replicaID uint64) string {
+	return fmt.Sprintf("[%05d:%05d]", shardID%mod, replicaID%mod)
 }
 
 // DescribeSM returns the string representation of a State Machine object
 // with known cluster id and node id values.
-func DescribeSM(clusterID uint64, nodeID uint64) string {
-	return fmt.Sprintf("[%05d:%05d]", clusterID%mod, nodeID%mod)
+func DescribeSM(shardID uint64, replicaID uint64) string {
+	return fmt.Sprintf("[%05d:%05d]", shardID%mod, replicaID%mod)
 }
 
 // DescribeSS returns the string representation of a snapshot object.
-func DescribeSS(clusterID uint64, nodeID uint64, index uint64) string {
-	return fmt.Sprintf("<%05d:%05d:%d>", clusterID%mod, nodeID%mod, index)
+func DescribeSS(shardID uint64, replicaID uint64, index uint64) string {
+	return fmt.Sprintf("<%05d:%05d:%d>", shardID%mod, replicaID%mod, index)
 }
