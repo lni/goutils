@@ -7,6 +7,7 @@ package vfs
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"sync/atomic"
@@ -60,6 +61,23 @@ func TestSyncingFile(t *testing.T) {
 			t.Fatalf("%d: expected sync to %d, but found %d", i, c.expectedSyncTo, syncTo)
 		}
 	}
+}
+
+type loggingFile struct {
+	File
+	name string
+	w    io.Writer
+	//w    io.Writer
+}
+
+func (l loggingFile) Sync() error {
+	_, err := l.w.Write([]byte(fmt.Sprintf("sync: %v [%v]\n", l.name, nil)))
+	return err
+}
+
+func (l loggingFile) Close() error {
+	_, err := l.w.Write([]byte(fmt.Sprintf("close: %v [%v]\n", l.name, nil)))
+	return err
 }
 
 func TestSyncingFileClose(t *testing.T) {
@@ -125,12 +143,13 @@ close: test [<nil>]
 
 			fmt.Fprintf(lf.w, "pre-close: %s [offset=%d sync-offset=%d]\n",
 				lf.name, atomic.LoadInt64(&s.atomic.offset), atomic.LoadInt64(&s.atomic.syncOffset))
+
 			if err := s.Close(); err != nil {
 				t.Fatal(err)
 			}
 
 			if s := buf.String(); c.expected != s {
-				t.Fatalf("expected\n%s\nbut found\n%s", c.expected, s)
+				t.Fatalf("expected\n%s len:%d\n but found\n%s len:%d", c.expected, len(c.expected), s, len(s))
 			}
 		})
 	}

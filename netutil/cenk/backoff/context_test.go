@@ -11,7 +11,7 @@ func TestContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cb := WithContext(b, ctx)
+	cb := WithContext(ctx, b)
 
 	if cb.Context() != ctx {
 		t.Error("invalid context")
