@@ -45,6 +45,7 @@ type Stopper struct {
 	shouldStopC chan struct{}
 	wg          sync.WaitGroup
 	debug       bool
+	once        sync.Once
 }
 
 // NewStopper return a new Stopper instance.
@@ -95,14 +96,16 @@ func (s *Stopper) ShouldStop() chan struct{} {
 func (s *Stopper) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	close(s.shouldStopC)
+	s.Close()
 	s.wg.Wait()
 }
 
 // Close closes the internal shouldStopc chan struct{} to signal all
 // worker goroutines that they should stop.
 func (s *Stopper) Close() {
-	close(s.shouldStopC)
+	s.once.Do(func() {
+		close(s.shouldStopC)
+	})
 }
 
 // Wait waits on the internal sync.WaitGroup. It only return when all
