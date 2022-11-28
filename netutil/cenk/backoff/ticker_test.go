@@ -69,7 +69,7 @@ func TestTickerContext(t *testing.T) {
 		return fmt.Errorf("error (%d)", i)
 	}
 
-	b := WithContext(NewConstantBackOff(time.Millisecond), ctx)
+	b := WithContext(ctx, NewConstantBackOff(time.Millisecond))
 	ticker := NewTicker(b)
 
 	var err error

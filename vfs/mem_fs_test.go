@@ -264,6 +264,20 @@ func TestMemFile(t *testing.T) {
 	}
 }
 
+func TestWinPathMemFS(t *testing.T) {
+	path := "e:\\winpath\\example/test.file"
+	mfs := NewMem()
+	if _, err := mfs.Stat(path); os.IsNotExist(err) {
+		_, cerr := mfs.Create(path)
+		if cerr != nil {
+			t.Fatalf("%v", cerr)
+		}
+		if _, serr := mfs.Stat(path); serr != nil {
+			t.Fatalf("%v", serr)
+		}
+	}
+}
+
 func TestStrictFS(t *testing.T) {
 	fs := NewStrictMem()
 	testCases := []string{

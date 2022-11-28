@@ -59,7 +59,7 @@ func TestRetryContext(t *testing.T) {
 		return fmt.Errorf("error (%d)", i)
 	}
 
-	err := Retry(f, WithContext(NewConstantBackOff(time.Millisecond), ctx))
+	err := Retry(f, WithContext(ctx, NewConstantBackOff(time.Millisecond)))
 	if err == nil {
 		t.Errorf("error is unexpectedly nil")
 	}
