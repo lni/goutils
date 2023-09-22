@@ -190,5 +190,7 @@ func (ln *StoppableListener) Close() error {
 
 // Addr returns the net.Addr of the listener.
 func (ln *StoppableListener) Addr() net.Addr {
-	panic("Addr not implemented")
+	// already return the first address listened, this is not worse than the
+	// stdlib listener it does this as well
+	return ln.listeners[0].Addr()
 }
