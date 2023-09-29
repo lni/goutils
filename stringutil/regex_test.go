@@ -30,6 +30,22 @@ func TestIsValidAddressErr(t *testing.T) {
 			value:    "service_1.dc1.ru:6060",
 			positive: false,
 		},
+		{
+			value:    "123service:6060",
+			positive: true,
+		},
+		{
+			value:    "123service.dc1.ru:6060",
+			positive: true,
+		},
+		{
+			value:    "1:6060",
+			positive: true,
+		},
+		{
+			value:    "1.dc1.ru:6060",
+			positive: true,
+		},
 	} {
 		tc := tc
 		t.Run(tc.value, func(t *testing.T) {
