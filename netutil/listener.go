@@ -17,12 +17,10 @@ package netutil
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"net"
 	"strings"
 	"time"
 
-	"github.com/lni/goutils/stringutil"
 	"github.com/lni/goutils/syncutil"
 )
 
@@ -44,11 +42,7 @@ type StoppableListener struct {
 }
 
 func parseAddress(addr string) (string, string, error) {
-	parts := strings.Split(addr, ":")
-	if len(parts) == 2 {
-		return parts[0], parts[1], nil
-	}
-	return "", "", errors.New("failed to get hostname")
+	return net.SplitHostPort(addr)
 }
 
 func isListenerStopperError(err error) bool {
@@ -68,24 +62,17 @@ func NewStoppableListener(addr string, tlsConfig *tls.Config,
 	// https://github.com/golang/go/issues/9334?ts=2
 	listeners := make([]net.Listener, 0)
 	toListen := make([]string, 0)
-	if stringutil.HostnameRegex.MatchString(hostname) {
-		ipList, err := net.LookupIP(hostname)
-		if err != nil {
-			return nil, err
+
+	ipList, err := net.LookupIP(hostname)
+	if err != nil {
+		return nil, err
+	}
+	added := make(map[string]struct{})
+	for _, v := range ipList {
+		if _, ok := added[v.String()]; !ok {
+			toListen = append(toListen, net.JoinHostPort(v.String(), port))
+			added[string(v)] = struct{}{}
 		}
-		added := make(map[string]struct{})
-		for _, v := range ipList {
-			// ipv6 address is ignored
-			if v.To4() == nil {
-				continue
-			}
-			if _, ok := added[string(v)]; !ok {
-				toListen = append(toListen, fmt.Sprintf("%s:%s", v, port))
-				added[string(v)] = struct{}{}
-			}
-		}
-	} else if stringutil.IPV4Regex.MatchString(hostname) {
-		toListen = append(toListen, addr)
 	}
 	for _, v := range toListen {
 		ln, err := net.Listen("tcp", v)
